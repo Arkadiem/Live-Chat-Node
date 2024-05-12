@@ -7,17 +7,36 @@
     <script type="module">
         import { io } from 'https://cdn.socket.io/4.7.5/socket.io.esm.min.js'
 
-        const socket = io('http://localhost:3000')
+        const getUsername = async () => {
+            const username = localStorage.getItem('username')
+            if (username) {
+                return username
+            } else {
+                const username = prompt('Please enter your username')
+                localStorage.setItem('username', username)
+                return username
+            }
+        }
+
+        const socket = io('http://localhost:3000',{
+            auth: {
+                username: await getUsername(),
+                serverOffset: 0
+            }
+        })
 
         const form = document.getElementById('form')
         const input = document.getElementById('input')
         const messages = document.getElementById('messages')
 
-        socket.on('chat message', msg => {
+        socket.on('chat message', (msg, serverOffset, username) => {
             const item = document.createElement('li')
-            item.textContent = msg
+            item.textContent = `${username}: ${msg}`
             messages.appendChild(item)
             window.scrollTo(0, document.body.scrollHeight)
+            socket.auth.serverOffset = serverOffset
+            // scroll to bottom of messages
+            messages.scrollTop = messages.scrollHeight
         })
 
         form.addEventListener('submit', e => {
@@ -62,6 +81,7 @@
             margin: 0;
             padding: 4px;
             overflow-y: scroll;
+             scroll-behavior: smooth;
             height: calc(100% - 48px);
         }
         #messages > li {
